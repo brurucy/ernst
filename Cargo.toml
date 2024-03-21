@@ -1,0 +1,20 @@
+[package]
+name = "ernst"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ftree = "1.0.1"
+fixedbitset = "0.5.1"
+rand = "0.8.5"
+ahash = "0.8.11"
+ordered-float = "4.2.0"
+indexmap = "2.2.5"
+
+[lib]
+name = "ernst"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ernstscratch"
+path = "src/bin/bin.rs"
