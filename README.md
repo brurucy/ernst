@@ -1,4 +1,4 @@
-# Ernst: 2D Spin Glass Simulation
+# Ernst: 2D Spin Glass Simulation for quantum annealing
 
 [![Crates.io](https://img.shields.io/crates/v/ernst)](https://crates.io/crates/ernst)
 [![docs](https://img.shields.io/crates/v/ernst?color=yellow&label=docs)](https://docs.rs/ernst)
@@ -6,6 +6,9 @@
 [Quantum Annealing](https://en.wikipedia.org/wiki/Adiabatic_quantum_computation) is an interesting way to leverage physical quantum effects to solve NP-hard problems. It 
 relies on encoding problems as a single 2-dimensional [Spin Glass](https://en.wikipedia.org/wiki/Spin_glass), such that its degenerate ground states will 
 map one-to-one to the solutions being sought.
+
+The raison d'etre of this library is to make it easy for you to create spin glasses, simulate them, and then send them
+over to a quantum annealer.
 
 ## Functionality
 

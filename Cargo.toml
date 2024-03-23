@@ -2,6 +2,13 @@
 name = "ernst"
 version = "0.1.0"
 edition = "2021"
+documentation = "https://docs.rs/ernst/"
+repository = "https://github.com/brurucy/ernst"
+license = "GPL-3"
+description = "Ernst: 2D Spin Glass Simulation for quantum annealing"
+keywords = ["optimization", "annealing", "spin-glass", "ising-model"]
+categories = ["science"]
+readme = "README.md"
 
 [dependencies]
 ftree = "1.0.1"
