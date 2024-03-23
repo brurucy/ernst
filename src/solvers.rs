@@ -1,7 +1,7 @@
 use crate::hamiltonian::TwoLocalHamiltonian;
 use crate::types::{
-    CompactState, ComparableEnergy, Energy, ExternalMagneticField,
-    Interactions, SpinIndex, State, Temperature,
+    CompactState, ComparableEnergy, Energy, ExternalMagneticField, Interactions, SpinIndex, State,
+    Temperature,
 };
 use indexmap::IndexSet;
 use ordered_float::{Float, OrderedFloat};
@@ -30,6 +30,25 @@ fn from_compact_state_to_state(compact_state: CompactState) -> State {
     return state;
 }
 
+/// Finds all ground states of the spin glass whose interaction terms and external magnetic field
+/// are given as the `interactions` and `external_magnetic_field` arguments.
+///
+/// ### Example
+///
+/// ```
+/// use ernst::solvers::find_all_ground_states;
+///
+/// let s0 = 0;
+/// let z = 1;
+///
+/// let copy_gate_interactions = vec![(s0, z, 1.0)];
+/// let copy_gate_external_magnetic_field = vec![0.0, 0.0];
+///
+/// let actual_states = find_all_ground_states(&copy_gate_interactions, &copy_gate_external_magnetic_field);
+/// let expected_states = vec![(-1.0, vec![false, false]), (-1.0, vec![true, true])];
+///
+/// assert_eq!(expected_states, actual_states)
+/// ```
 pub fn find_all_ground_states(
     interactions: &Interactions,
     external_magnetic_field: &ExternalMagneticField,
@@ -68,6 +87,12 @@ pub fn find_all_ground_states(
         .collect()
 }
 
+/// Parameters for simulated annealing.
+/// - `initial_temperature`: temperature at the zeroth step
+/// - `final_temperature`: temperature at the <sweeps> step
+/// - `sweeps`: number of sampling steps
+/// - `seed`: rng seed that ensures the whole process to be repeatable
+/// - `trace`: if true, then it will keep track of all states found on the way to the ground state
 pub struct SimulatedAnnealingConfiguration {
     pub initial_temperature: f32,
     pub final_temperature: f32,
@@ -89,6 +114,33 @@ impl Default for SimulatedAnnealingConfiguration {
 }
 
 pub type Epoch = usize;
+
+/// Explores the energy landscape of the spin glass whose interaction terms and external magnetic field
+/// are given as the `interactions` and `external_magnetic_field` arguments.
+///
+/// It will return the encountered states of lowest energy. See [SimulatedAnnealingConfiguration] for
+/// information on how to make it so that it will return every single lowest energy state found.
+///
+/// ### Example
+///
+/// ```
+/// use indexmap::map::VacantEntry;
+/// use ernst::solvers::simulated_annealing;
+///
+/// let s0 = 0;
+/// let z = 1;
+///
+/// let copy_gate_interactions = vec![(s0, z, 1.0)];
+/// let copy_gate_external_magnetic_field = vec![0.0, 0.0];
+///
+/// let actual_states: Vec<_> = simulated_annealing(&copy_gate_interactions, &copy_gate_external_magnetic_field, None)
+///   .into_iter()
+///   .map(|(energy, state, _epoch)| (energy, state))
+///   .collect();
+/// let expected_states = vec![(-1.0, vec![false, false]), (-1.0, vec![true, true])];
+///
+/// assert_eq!(expected_states, actual_states)
+/// ```
 pub fn simulated_annealing(
     interactions: &Interactions,
     external_magnetic_field: &ExternalMagneticField,
@@ -105,8 +157,8 @@ pub fn simulated_annealing(
     let initial_temperature: Temperature = OrderedFloat::from(config.initial_temperature);
     let final_temperature: Temperature = OrderedFloat::from(config.final_temperature);
     let one = OrderedFloat::from(1.0);
-    let cooling_rate = (final_temperature / initial_temperature).powf(one / config.sweeps as f32);
-    let mut temperature: Temperature = initial_temperature.into();
+    let cooling_rate = (final_temperature / initial_temperature).powf(one / config.sweeps as Energy);
+    let mut temperature: Temperature = initial_temperature;
     let k = one.clone();
 
     let n = external_magnetic_field.len();
@@ -123,10 +175,10 @@ pub fn simulated_annealing(
         vec![(initial_energy, two_local_hamiltonian.spins.clone())]
             .into_iter()
             .collect();
-    let mut ground_state_update_time = vec![];
+    let mut ground_state_update_time = vec![0];
 
-    let zero = OrderedFloat::from(0.0f32);
-    for sweep in 0..config.sweeps {
+    let zero = OrderedFloat::epsilon();
+    for sweep in 1..config.sweeps {
         let spin_to_flip = rng.gen_range(0..two_local_hamiltonian.spins.len());
         let current_energy: ComparableEnergy = two_local_hamiltonian.current_energy().into();
 
@@ -134,8 +186,9 @@ pub fn simulated_annealing(
         let new_energy: ComparableEnergy = two_local_hamiltonian.current_energy().into();
         let delta_energy: ComparableEnergy = new_energy - current_energy;
 
-        if delta_energy <= zero
-            || OrderedFloat::from(rng.gen::<f32>()) < (-delta_energy / (k * temperature)).exp()
+        let not_acceptance_probability = OrderedFloat::from(rng.gen::<Energy>());
+        let acceptance_probability = (-delta_energy / (k * temperature)).exp();
+        if delta_energy <= zero || acceptance_probability > not_acceptance_probability
         {
             let new_ground_state = (new_energy, two_local_hamiltonian.spins.clone());
             if new_energy < lowest_energy {
@@ -147,9 +200,11 @@ pub fn simulated_annealing(
                     ground_states.insert(new_ground_state);
                 }
                 ground_state_update_time.push(sweep);
-            } else if (new_energy - lowest_energy).abs() < OrderedFloat::epsilon() {
-                ground_states.insert((new_energy, two_local_hamiltonian.spins.clone()));
-                ground_state_update_time.push(sweep);
+            } else if (new_energy - lowest_energy).abs() <= zero {
+                if !ground_states.contains(&new_ground_state) {
+                    ground_states.insert((new_energy, two_local_hamiltonian.spins.clone()));
+                    ground_state_update_time.push(sweep);
+                }
             }
         } else {
             two_local_hamiltonian.flip_spin(spin_to_flip);

@@ -14,7 +14,3 @@ indexmap = "2.2.5"
 [lib]
 name = "ernst"
 path = "src/lib.rs"
-
-[[bin]]
-name = "ernstscratch"
-path = "src/bin/bin.rs"

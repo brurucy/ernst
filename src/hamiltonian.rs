@@ -1,10 +1,7 @@
-use crate::types::{
-    CompactState, Energy, ExternalMagneticField, Interactions, LinearizedUpperTriangularMatrix,
-    SpinIndex, State,
-};
+use crate::types::{CompactState, Energy, ExternalMagneticField, Interactions, LinearizedUpperTriangularMatrix, SpinIndex, State};
 use ftree::FenwickTree;
 
-pub struct TwoLocalHamiltonian {
+pub(crate) struct TwoLocalHamiltonian {
     pub(crate) spins: CompactState,
     linearized_interactions: LinearizedUpperTriangularMatrix,
     external_magnetic_field: ExternalMagneticField,
