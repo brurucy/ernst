@@ -1,5 +1,5 @@
 use crate::spin_network::SpinNetwork;
-use crate::types::{BinaryNode, Energy, MagneticFieldStrength, Node, UnaryNode};
+use crate::types::{BinaryNode, TernaryNode, Energy, MagneticFieldStrength, Node, UnaryNode};
 
 #[derive(Default)]
 pub struct COPY {
@@ -106,6 +106,42 @@ impl BinaryNode for OR {
         output_node_index
     }
 }
+impl TernaryNode for OR {
+    fn connect_to_three(
+        &self,
+        spin_network: &mut SpinNetwork,
+        first_input: usize,
+        second_input: usize,
+        third_input: usize,
+    ) -> usize {
+        let ouput_node_index: usize = self.connect(spin_network);
+        let copy_with_minus_third = COPY::new(-1.0 / 3.0);
+        let first_copy_output_index = spin_network.add_unary_node(first_input, &copy_with_minus_third);
+        let second_copy_output_index =
+            spin_network.add_unary_node(second_input, &copy_with_minus_third);
+        let third_copy_output_index = spin_network.add_unary_node(third_input, &copy_with_minus_third);
+
+        let first_to_second = (first_copy_output_index, second_copy_output_index, -1.0 / 3.0);
+        let first_to_third = (first_copy_output_index, third_copy_output_index, -1.0 / 3.0);
+        let second_to_third = (second_copy_output_index, third_copy_output_index, -1.0 / 3.0);
+        let first_to_output = (first_copy_output_index, ouput_node_index, 1.0);
+        let second_to_output = (second_copy_output_index, ouput_node_index, 1.0);
+        let third_to_output = (third_copy_output_index, ouput_node_index, 1.0);
+
+        spin_network.interactions.push(first_to_second);
+        spin_network.interactions.push(first_to_third);
+        spin_network.interactions.push(second_to_third);
+        spin_network.interactions.push(first_to_output);
+        spin_network.interactions.push(second_to_output);
+        spin_network.interactions.push(third_to_output);
+
+        ouput_node_index
+    }
+
+}//
+
+//
+
 
 #[derive(Default)]
 pub struct NAND {}

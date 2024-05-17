@@ -2,8 +2,7 @@ use crate::solvers::{
     find_all_ground_states, simulated_annealing, Epoch, SimulatedAnnealingConfiguration,
 };
 use crate::types::{
-    BinaryNode, Energy, ExternalMagneticField, Interactions, MagneticFieldStrength, SpinIndex,
-    State, UnaryNode
+    BinaryNode, TernaryNode, Energy, ExternalMagneticField, Interactions, MagneticFieldStrength, NAryNode, SpinIndex, State, UnaryNode
 };
 
 /// A SpinNetwork is meant to represent a 2D Spin Glass.
@@ -103,6 +102,24 @@ impl SpinNetwork {
     ) -> usize {
         return BinaryNode::connect_to_two(binary_node, self, left_input, right_input);
     }
+    pub fn add_ternary_node(
+        &mut self,
+        first_input: usize,
+        second_input: usize,
+        third_input: usize,
+        ternary_node: &impl TernaryNode,
+    ) -> usize {
+        return TernaryNode::connect_to_three(ternary_node, self, first_input, second_input, third_input);
+    }
+    // problem here: how to make it accept variable n number of inputs in rust?
+     pub fn add_NAry_node(
+        &mut self,
+        inputs: &Vec<usize>,
+        nary_node: &impl NAryNode,
+    ) -> usize {
+        NAryNode::connect_to_n(nary_node, self, inputs)
+    }
+
     /// Finds all ground states of the spin glass represented by the SpinNetwork. The argument `spin_ordering`, when
     /// given, will ensure that the `State`s will be projected according to it.
     ///

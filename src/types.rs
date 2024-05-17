@@ -29,6 +29,15 @@ pub trait BinaryNode: Node {
         right_input: SpinIndex,
     ) -> SpinIndex;
 }
+pub trait TernaryNode: Node {
+    fn connect_to_three(
+        &self,
+        spin_network: &mut SpinNetwork,
+        first_input: SpinIndex,
+        second_input: SpinIndex,
+        third_input: SpinIndex,
+    ) -> SpinIndex;
+}
 pub trait NAryNode: Node {
     fn connect_to_n(&self, spin_network: &mut SpinNetwork, inputs: &Vec<SpinIndex>) -> SpinIndex;
 }
